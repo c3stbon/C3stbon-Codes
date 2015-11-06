@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+# coding:utf-8
+
+import threadpool
+import requests
+import re
+import argparse
+
+
+def cmd_args():
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('-f', '--file', help="input a file")
+    
+    parser.add_argument('-d', '--domain', help="input a doamin")
+    
+    parser.add_argument('-t', '--thread', default=1, help="input an integer,default 1", type=int)
+    
+    args = parser.parse_args()
+    return args    
+
+
+
+def get_title(domain):
+
+    pattern1 = '<title>([^<]*?)</title>'
+
+    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko'}
+            
+    try:
+        r = requests.get('http://%s' % domain.strip(), headers=headers, timeout=10, allow_redirects=True)
+    
+    except:
+        print "%s -- can't access the " % domain.strip()
+        
+    else:
+        
+        if r.history:
+            status = 'Redirect'
+
+        else:
+            status = r.status_code       
+    
+        t = re.findall(pattern1, r.content)
+    
+        if re.findall('gb2312', r.content.lower()):
+            charset = "gb2312"
+    
+        elif re.findall('gbk', r.content.lower()):
+            charset = "gbk"
+    
+        elif re.findall('utf-8', r.content.lower()):
+            charset = "utf-8"    
+    
+        else:
+            charset = r.encoding
+    
+        try:
+            title = t[0].decode(charset)
+        except:
+            title = ""
+
+        print 'http://'+domain.strip(),status,title.strip()+'\n'        
+     
+    
+def work(file,threads):
+    with open(file) as f:
+                 
+        pool = threadpool.ThreadPool(threads)
+        reqs = threadpool.makeRequests(get_title, [i for i in f.readlines()])
+        [pool.putRequest(req) for req in reqs]
+        pool.wait()
+
+
+if __name__ == '__main__':
+    args = cmd_args()
+    
+    file = args.file
+    threads = args.thread
+    try:
+        work(file, threads)
+    except KeyboardInterrupt:
+        print 'ctrl+c'
+        
+    print "All Job Done"
