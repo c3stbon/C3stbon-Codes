@@ -79,7 +79,7 @@ if __name__ == '__main__':
     threads = args.thread
     try:
         work(file, threads)
-    except KeyboardInterrupt:
-        print 'ctrl+c'
+    except KeyboardInterrupt, e:
+        print 'User Aborted.'
         
     print "All Job Done"
