@@ -1,0 +1,48 @@
+import Queue
+import threading
+import urllib2
+
+
+class DownloadThread(threading.Thread):
+    
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        
+    def run(self):
+        while 1:
+            url = self.queue.get()
+            print self.name+" begin download "+url+"..."
+            self.download_file(url)
+            self.queue.task_done()
+            print self.name+" download completed!!!"
+            
+    def download_file(self, url):
+        urlhandle = urllib2.urlopen(url)
+        print self.name+" content: "+urlhandle.read(100)
+        
+if __name__ == "__main__":
+    
+    urls = ["http://yahoo.com", 
+            "http://bing.com", 
+            "http://www.waitalone.cn",
+            "http://www.freebuf.com", 
+            "http://apple.com",
+            "http://www.biadu.com",
+            "http://www.12306.cn"]
+    
+    queue = Queue.Queue()
+    
+    #spawn a pool of threads, and pass them queue instance
+    for i in range(2):
+        t = DownloadThread(queue)
+        t.setDaemon(True)
+        t.start()
+        
+    #populate queue with data    
+    for url in urls:
+        queue.put(url)
+        
+    
+    #wait on the queue until everything has been processed    
+    queue.join()
