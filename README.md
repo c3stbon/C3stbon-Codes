@@ -1,2 +1,1 @@
-# domain_title
-Get the title of domain quickly
+Welcome to c3stbon's codes world!
