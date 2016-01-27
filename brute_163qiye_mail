@@ -1,3 +1,8 @@
+#!/usr/bin/env python2
+# -*- coding:utf-8 -*-
+# code for bruteforcing 163qiye_mails
+# By c3stbon
+
 import poplib
 from multiprocessing.dummy import Pool as ThreadPool
 import time
