@@ -47,6 +47,7 @@ with open('users.txt') as f:
 fp = ['abc123','a12345']
 
 #generate pairs of user and password
+#use passwd to looping user:  user_passwd = [(user,passwd) for passwd in fp for user in fu] 
 user_passwd = [(user,passwd) for user in fu for passwd in fp]
 
 
